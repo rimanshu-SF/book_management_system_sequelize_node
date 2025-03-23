@@ -1,27 +1,34 @@
-import { sequelize } from '../config/dbConnect'
-import { DataTypes } from 'sequelize'
+import { Model, DataTypes } from 'sequelize';
+import { sequelize } from '../config/dbConnect'; 
 
-const Author: any = sequelize.define(
-  'Author',
+class Author extends Model {
+  public id!: number; 
+  public name!: string;
+  public email!: string;
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
+}
+
+Author.init(
   {
-    firstName: {
+    name: {
       type: DataTypes.STRING,
-      allowNull: false
-    },
-    lastName: {
-      type: DataTypes.STRING
+      allowNull: true, 
     },
     email: {
       type: DataTypes.STRING,
       allowNull: false,
       validate: {
-        isEmail: true
-      }
-    }
+        isEmail: true,
+      },
+    },
   },
   {
-    timestamps: true
+    sequelize,
+    modelName: 'Author',
+    tableName: 'Authors',
+    timestamps: true,
   }
-)
+);
 
-export default Author
+export default Author;

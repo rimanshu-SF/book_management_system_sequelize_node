@@ -4,14 +4,14 @@ import apiError from '../utils/apiError'
 
 // method to create Category
 const createCategory = async (req: Request, res: Response): Promise<void> => {
-  const { categoryName } = req.body
+  const { genre } = req.body
 
-  if (!categoryName) {
+  if (!genre) {
     throw new apiError(400, 'Category name is required!')
   }
 
   try {
-    const newCategory = await Category.create({ categoryName })
+    const newCategory = await Category.create({ genre: genre })
 
     res.status(201).json({
       success: true,
@@ -79,7 +79,7 @@ const updateCategory = async (req: Request, res: Response): Promise<void> => {
     console.log('Categoryof', category)
 
     // category.dataValues.categoryName = categoryName;
-    await category.update({ categoryName: categoryName }, { where: { id: id } })
+    await category.update({ genre: categoryName }, { where: { id: id } })
     const updatedCategory = await Category.findByPk(id)
     console.log('updatedCategory', updatedCategory)
 

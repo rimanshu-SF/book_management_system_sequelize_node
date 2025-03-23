@@ -1,57 +1,58 @@
-import { Request, Response } from 'express'
-import Author from '../models/author.model'
-import Category from '../models/category.model'
-import Book from '../models/book.model'
-import apiError from '../utils/apiError'
-import apiResponse from '../utils/apiResponse'
+import { Request, Response } from 'express';
+import Author from '../models/author.model';
+import Category from '../models/category.model';
+import Book from '../models/book.model';
+import apiError from '../utils/apiError';
+import apiResponse from '../utils/apiResponse';
 
 const getPaginatedBook = async (req: Request, res: Response) => {
-  console.log('Clicked page')
-
   try {
-    const page = parseInt(req.query.page as string) || 1
-    const limit = parseInt(req.query.limit as string) || 10
-    const offset = (page - 1) * limit
-    console.log('Clicked page', page, limit)
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const offset = (page - 1) * limit;
+    console.log('Clicked page', page, limit);
 
     const books = await Book.findAndCountAll({
-      limit: limit,
-      offset: offset,
+      limit,
+      offset,
       order: [['createdAt', 'DESC']],
       include: [
         {
           model: Author,
-          attributes: ['id', 'firstName', 'lastName']
+          attributes: ['id', 'name'], // Consistent with model
         },
         {
           model: Category,
-          attributes: ['id', 'categoryName']
-        }
-      ]
-    })
+          attributes: ['id', 'genre'], // Consistent with model
+        },
+      ],
+    });
 
-    const totalPages = Math.ceil(books.count / limit)
+    const totalPages = Math.ceil(books.count / limit);
 
     const data = {
       totalItems: books.count,
       totalBooks: books.rows.length,
       count: books.count,
       books: books.rows,
-      totalPages: totalPages,
+      totalPages,
       currentPage: page,
-      limit: limit
-    }
+      limit,
+    };
+
     if (data.totalBooks === 0) {
       return res
         .status(200)
-        .json(new apiResponse(200, data, `No Book for page ${page}`))
+        .json(new apiResponse(200, data, `No books for page ${page}`));
     }
-    return res.status(200).json(new apiResponse(200, data, 'Books Fetched'))
+    return res.status(200).json(new apiResponse(200, data, 'Books fetched'));
   } catch (error) {
-    console.error(error)
-    return res.status(500).json({ message: 'Error fetching books' })
+    console.error(error);
+    return res
+      .status(500)
+      .json(new apiResponse(500, null, 'Error fetching books'));
   }
-}
+};
 
 const addBook = async (req: Request, res: Response) => {
   const {
@@ -60,70 +61,92 @@ const addBook = async (req: Request, res: Response) => {
     price,
     discountPrice,
     publicationDate,
-    authorId,
-    categoryId
-  } = req.body
+    Author: authorData,
+    Category: categoryData,
+  } = req.body;
+
+  // console.log('Validation checks:', {
+  //   title: !title,
+  //   isbn: !isbn,
+  //   price: price === undefined,
+  //   discountPrice: discountPrice === undefined,
+  //   publicationDate: !publicationDate,
+  //   authorDataName: !authorData?.name,
+  //   categoryDataGenre: !categoryData?.genre,
+  //   rawAuthorData: authorData,
+  //   rawCategoryData: categoryData,
+  // });
 
   if (
     !title ||
     !isbn ||
-    !price ||
-    !discountPrice ||
+    price === undefined ||
+    discountPrice === undefined ||
     !publicationDate ||
-    !categoryId ||
-    !authorId
+    !authorData?.name ||
+    !categoryData?.genre
   ) {
-    throw new apiError(400, 'All Fields are Required!')
+    throw new apiError(400, 'All fields are required!');
   }
 
   try {
-    const bookExist = await Book.findOne({ where: { title: title } })
-    console.log('Book Existence', bookExist)
+    const bookExist = await Book.findOne({ where: { title } });
     if (bookExist) {
       return res
-        .status(402)
-        .json(
-          new apiResponse(402, bookExist, 'Book with this title already exist')
-        )
+        .status(409)
+        .json(new apiResponse(409, bookExist, 'Book with this title already exists'));
     }
-    const authorExists = await Author.findOne({ where: { id: authorId } })
+    // console.log("bookExist",bookExist);
+    const isbnExist = await Book.findOne({ where: { isbn } });
+    if (isbnExist) {
+      return res
+        .status(409)
+        .json(new apiResponse(409, bookExist, 'Book with this ISBN already exists'));
+    }
+
+    const authorExists = await Author.findOne({
+      where: { name: authorData.name },
+    });
+    console.log("Author Exist", authorExists);
+
     if (!authorExists) {
-      throw new apiError(404, 'Author not found')
+      throw new apiError(404, 'Author not found');
     }
 
-    const categoryExists = await Category.findOne({ where: { id: categoryId } })
+    const categoryExists = await Category.findOne({
+      where: { genre: categoryData.genre },
+    });
     if (!categoryExists) {
-      throw new apiError(404, 'Category not found')
+      throw new apiError(404, 'Category not found');
     }
 
-    // Create the book
     const newBook = await Book.create({
       title,
-      authorId,
+      authorId: authorExists.dataValues.id,
       isbn,
       price,
       discountPrice,
       publicationDate,
-      categoryId
-    })
+      categoryId: categoryExists.dataValues.id,
+    });
+    // console.log("NewBook", newBook);
 
-    // Return success response with created book data
-    return res.status(201).json({
-      success: true,
-      message: 'Book added successfully',
-      data: newBook
-    })
+    return res
+      .status(201)
+      .json(new apiResponse(201, newBook, 'Book added successfully'));
   } catch (error) {
-    console.log(error)
+    console.error(error);
 
-    // Handle Sequelize errors and others
     if (error instanceof apiError) {
-      throw error
-    } else {
-      throw new apiError(500, 'Server side problem')
+      return res
+        .status(error.statusCode)
+        .json(new apiResponse(error.statusCode, null, error.message));
     }
+    return res
+      .status(500)
+      .json(new apiResponse(500, null, 'Server side problem'));
   }
-}
+};
 
 const getAllBooks = async (req: Request, res: Response) => {
   console.log("get all books");
@@ -133,17 +156,17 @@ const getAllBooks = async (req: Request, res: Response) => {
       include: [
         {
           model: Author,
-          attributes: ['id', 'firstName', 'lastName']
+          attributes: ['id', 'name']
         },
         {
           model: Category,
-          attributes: ['id', 'categoryName']
+          attributes: ['id', 'genre']
         }
       ]
     })
 
 
-    console.log('Book by the', books)
+    // console.log('Book by the', books)
     if (books && books.length > 0) {
       return res
         .status(202)
@@ -194,8 +217,15 @@ const updateBook = async (req: Request, res: Response) => {
   }
 
   try {
-    const book = await Book.findByPk(id)
+    const bookExist = await Book.findOne({ where: { title } });
+    if (bookExist) {
+      return res
+        .status(409)
+        .json(new apiResponse(409, bookExist, 'Book with this title already exists'));
+    }
+    console.log("bookExist",bookExist);
 
+    const book = await Book.findByPk(id)
     if (!book) {
       return res.status(404).json({
         success: false,

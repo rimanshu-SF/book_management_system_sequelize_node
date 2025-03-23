@@ -1,12 +1,26 @@
-import { sequelize } from '../config/dbConnect'
-import { DataTypes } from 'sequelize'
+import { Model, DataTypes } from 'sequelize';
+import { sequelize } from '../config/dbConnect'; 
 
-const Category = sequelize.define('Category', {
-  categoryName: {
-    type: DataTypes.STRING,
-    allowNull: false
+class Category extends Model {
+  public id!: number; 
+  public genre!: string;
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
+}
+
+Category.init(
+  {
+    genre: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+  },
+  {
+    sequelize,
+    modelName: 'Category',
+    tableName: 'Categories',
+    timestamps: true,
   }
-})
+);
 
-
-export default Category
+export default Category;
