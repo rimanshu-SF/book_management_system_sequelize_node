@@ -12,7 +12,6 @@ export const googleSignupCallback = (req: Request, res: Response) => {
     const token = (req.user as any)?.token;
   
     if (token) {
-      // ✅ Redirect to frontend after signup
       res.redirect(`http://localhost:5173/dashboard?token=${token}`);
     } else {
       res.redirect(`http://localhost:5173/signup?error=signup_failed`);

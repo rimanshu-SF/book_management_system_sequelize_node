@@ -1,6 +1,5 @@
 import express from 'express';
 import asyncHandler from '../utils/asyncHandler';
-// import { createAuthor, getAllAuthors, getAuthorById, updateAuthor, deleteAuthor } from '../controllers/author.controller';
 import { createCategory, getAllCategories, getCategoryById, deleteCategory, updateCategory } from '../controllers/category.controller';
 const router = express.Router();
 

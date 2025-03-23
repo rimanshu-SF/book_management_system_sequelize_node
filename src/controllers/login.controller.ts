@@ -12,7 +12,6 @@ export const googleLoginCallback = (req: Request, res: Response) => {
     const token = (req.user as any)?.token;
   
     if (token) {
-      // ✅ Redirect to frontend after login
       res.redirect(`http://localhost:5173/dashboard?token=${token}`);
     } else {
       res.redirect(`http://localhost:5173/login?error=login_failed`);

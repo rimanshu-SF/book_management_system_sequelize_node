@@ -19,11 +19,11 @@ const getPaginatedBook = async (req: Request, res: Response) => {
       include: [
         {
           model: Author,
-          attributes: ['id', 'name'], // Consistent with model
+          attributes: ['id', 'name'],
         },
         {
           model: Category,
-          attributes: ['id', 'genre'], // Consistent with model
+          attributes: ['id', 'genre'],
         },
       ],
     });
