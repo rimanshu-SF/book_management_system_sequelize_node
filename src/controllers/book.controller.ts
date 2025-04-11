@@ -4,6 +4,73 @@ import Category from '../models/category.model';
 import Book from '../models/book.model';
 import apiError from '../utils/apiError';
 import apiResponse from '../utils/apiResponse';
+import { Readable } from 'stream';
+import EventEmitter from 'events';
+const eventEmitter = new EventEmitter();
+
+// New bulk book creation
+const bulkAddBook = async (req: Request, res: Response) => {
+  const books = req.body; 
+
+  console.log('Bulk books:', books);
+  console.log('Request body:', req.body);
+
+  if (!Array.isArray(books) || books.length <= 5) {
+    return res.status(400).json({ error: 'Books must be atleast 5' });
+  }
+
+  try {
+    const bookStream = Readable.from(books);
+
+    bookStream
+      .on('data', async (bookData) => {
+        bookStream.pause(); 
+        try {
+          // Check if author exists
+          const authorExists = await Author.findByPk(bookData.authorId);
+          if (!authorExists) {
+            throw new apiError(404, `Author with ID ${bookData.authorId} not found`);
+          }
+
+          // Check if category exists
+          const categoryExists = await Category.findByPk(bookData.categoryId);
+          if (!categoryExists) {
+            throw new apiError(404, `Category with ID ${bookData.categoryId} not found`);
+          }
+
+          // Create the book with validated authorId and categoryId
+          const book = await Book.create({
+            title: bookData.title,
+            authorId: authorExists.id,
+            isbn: bookData.isbn,
+            publicationDate: bookData.publicationDate,
+            price: bookData.price,
+            discountPrice: bookData.discountPrice,
+            categoryId: categoryExists.id, 
+            view: bookData.view,
+          });
+
+          eventEmitter.emit('bookCreated', book);
+        } catch (error: any) {
+          console.error('Error processing book:', error.message);
+        }
+        bookStream.resume();
+      })
+      .on('end', () => {
+        res.status(200).json({ message: `${books.length} books processed` });
+      })
+      .on('error', (error) => {
+        res.status(500).json({ error: error.message });
+      });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+eventEmitter.on('bookCreated', (book) => {
+  console.log(`Book added: ${book.title}`);
+});
+
 
 const getPaginatedBook = async (req: Request, res: Response) => {
   try {
@@ -65,17 +132,6 @@ const addBook = async (req: Request, res: Response) => {
     Category: categoryData,
   } = req.body;
 
-  // console.log('Validation checks:', {
-  //   title: !title,
-  //   isbn: !isbn,
-  //   price: price === undefined,
-  //   discountPrice: discountPrice === undefined,
-  //   publicationDate: !publicationDate,
-  //   authorDataName: !authorData?.name,
-  //   categoryDataGenre: !categoryData?.genre,
-  //   rawAuthorData: authorData,
-  //   rawCategoryData: categoryData,
-  // });
 
   if (
     !title ||
@@ -283,5 +339,6 @@ export {
   getBookById,
   updateBook,
   deleteBook,
-  getPaginatedBook
+  getPaginatedBook,
+  bulkAddBook
 }

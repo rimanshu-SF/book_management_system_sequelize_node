@@ -6,6 +6,7 @@ import {router as authorRoute} from './src/routes/author.route'
 import { router as bookRoutes } from './src/routes/book.route'
 import { router as categoryRoutes } from './src/routes/category.route'
 import {router as authRoute} from './src/routes/auth.route'
+import status from 'express-status-monitor'
 // import { defineAssociations } from './src/config/assosiation'
 import './src/config/passport';
 import session from 'express-session'
@@ -23,6 +24,7 @@ app.use(
     saveUninitialized: true,
   }),
 );
+app.use(status())
 dbConnect()
   .then(() => {
     ;(async () => {
@@ -44,7 +46,7 @@ dbConnect()
     console.log('💥💥 Database Connection Failed', err)
   })
 
-  app.use('/auth',authRoute );
+app.use('/auth',authRoute );
 app.use('/api/v1/book', bookRoutes) 
 app.use('/api/v1/author', authorRoute)
 app.use('/api/v1/category', categoryRoutes)    
