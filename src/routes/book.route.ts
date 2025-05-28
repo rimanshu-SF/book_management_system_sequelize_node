@@ -1,6 +1,7 @@
 import express from 'express'
 import {
   addBook,
+  bulkAddBook,
   deleteBook,
   getAllBooks,
   getBookById,
@@ -17,5 +18,6 @@ router.get('/', asyncHandler(getAllBooks))
 router.get('/:id', asyncHandler(getBookById))
 router.patch('/:id', asyncHandler(updateBook))
 router.delete('/:id', asyncHandler(deleteBook))
+router.post('/bulk', asyncHandler(bulkAddBook))
 
 export { router }
