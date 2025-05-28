@@ -4,10 +4,10 @@ import apiError from '../utils/apiError'
 
 // Create a new author
 const createAuthor = async (req: Request, res: Response) => {
-  const { firstName, lastName, email } = req.body
+  const { name, email } = req.body
 
-  if (!firstName || !email) {
-    throw new apiError(400, 'First name and email are required!')
+  if (!name || !email) {
+    throw new apiError(400, 'Name and email are required!')
   }
 
   try {
@@ -16,8 +16,7 @@ const createAuthor = async (req: Request, res: Response) => {
       throw new apiError(409, 'Author with this email already exists!')
     }
     const newAuthor = await Author.create({
-      firstName,
-      lastName,
+      name,
       email
     })
 
@@ -76,8 +75,8 @@ const getAuthorById = async (req: Request, res: Response) => {
 // Update an author by ID
 const updateAuthor = async (req: Request, res: Response) => {
   const { id } = req.params
-  const { firstName, lastName, email } = req.body
-  if (!firstName && !lastName && !email) {
+  const { name, email } = req.body
+  if (!name && !email) {
     return res.status(400).json({
       success: false,
       message: 'At least one field is required to update!'
@@ -93,8 +92,7 @@ const updateAuthor = async (req: Request, res: Response) => {
     }
     console.log('Author from update', author)
 
-    if (firstName) author.firstName = firstName
-    if (lastName) author.lastName = lastName
+    if (name) author.name = name;
     if (email) author.email = email
 
     await author.save()

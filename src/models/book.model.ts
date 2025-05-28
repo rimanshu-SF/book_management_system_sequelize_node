@@ -21,15 +21,12 @@ const Book = sequelize.define(
       onUpdate: 'CASCADE'
     },
     isbn: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING,
       allowNull: false
     },
     publicationDate: {
       type: DataTypes.DATEONLY,
       allowNull: false,
-      validate: {
-        isBefore: '2025-02-20'
-      }
     },
     price: {
       type: DataTypes.FLOAT,
